@@ -183,11 +183,11 @@ def run():Unit = {
                          .read[Map[String,Double]](requests.get(url).text) 
                          .toList
                          .map {x => { val a = x._1.split("_").map { _.toLowerCase}
-                                      Edge(a(0), a(1), x._2)}}
+                                      Edge(a(0), a(1), -scala.math.log(x._2))}}
                          .filter { x => x.start != x.stop}
 
    arbitageDetection(responseAsEdgeList) match {
-     case Some(x) => println("Arbitage loop detected " ++ x)
+     case Some(x) => println("Arbitage loop detected " ++ x.toString)
      case None => println("No arbitage loop detected !!!")
    }
    
