@@ -3,6 +3,14 @@ import $ivy.{
   `com.lihaoyi::upickle:0.7.5`
 }
 
+
+// ================================================================
+//
+//   type synonyms and record types to make things easier
+//
+// ==============================================================
+
+
 type Vertex = String
 type VertexList = List[Vertex]
 
@@ -11,13 +19,19 @@ case class Edge(start: Vertex, stop: Vertex, weight: Double)
 type EdgeList = List[Edge]
 
 
-// internal stuff
-
 type DistanceMap = Map[Vertex, Double]
 type PredecessorMap = Map[Vertex, Option[Vertex]]
 
-//
 
+// ================================================================
+//
+//                     Utils
+//
+// ==============================================================
+
+
+// run-time complexity is about O(n)
+// Doc: This prints out the path 
 def parentMappingHelper(ps: PredecessorMap, source: Vertex, t: VertexList = List()): VertexList = {
      if (t contains source) {
          t :+ source
@@ -29,12 +43,20 @@ def parentMappingHelper(ps: PredecessorMap, source: Vertex, t: VertexList = List
 }
 
 
-// run-time complexity O(n^2)
+// worst run-time complexity is about O(n^2)
 def transformPredecessorMap(ps: PredecessorMap):Map[Vertex, VertexList] = {
   ps.keys.map {(x) => (x,parentMappingHelper(ps,x).reverse)} .toMap 
 }
 
 
+// ================================================================
+//
+//                     Bellman-Ford
+//
+// ==============================================================
+
+
+// runtime complecity is about k*O(1) which for the sake of analysis can be dumbed down to  O(1)
 def relax(edge: Edge, ds: Map[Vertex,Double]): Option[Double] = {
   edge match {
    case Edge(s,e,w) => for { 
@@ -46,13 +68,15 @@ def relax(edge: Edge, ds: Map[Vertex,Double]): Option[Double] = {
                        yield r}}
 
 
+// runtime complexity is O(E) where E is the number of edges
 def relaxEdgeList( es: EdgeList, ds: DistanceMap , ps: PredecessorMap) : (DistanceMap, PredecessorMap) = { 
 
     es.foldLeft((ds,ps)) { (acc,edge) => { relax(edge,acc._1) match { case Some(x) =>  (acc._1 + (edge.stop -> x), acc._2 + (edge.stop -> Some(edge.start)))  
-                                                                       case _ => acc }}}} 
+                                                                      case        _ => acc }}}} 
 
 
-// check anonymous syntax
+
+//  time complexity of this is O(E)  
 def negativeCycleCheck(es:EdgeList, ds: DistanceMap) : Boolean = {
 
    es.map {(edge) => { relax(edge, ds) match { case Some(_) => true 
@@ -62,6 +86,7 @@ def negativeCycleCheck(es:EdgeList, ds: DistanceMap) : Boolean = {
 }
 
 
+// O(n) + O(n) + O(V*E) + O(2*E) ~~ O(V*E)
 def bellmanFord(vs:VertexList , es: EdgeList, start: Vertex) 
 : (Boolean, DistanceMap, PredecessorMap) = {
 
@@ -80,6 +105,13 @@ def bellmanFord(vs:VertexList , es: EdgeList, start: Vertex)
 }
 
 
+// ================================================================
+//
+//                     Arbitage detector
+//
+// ==============================================================
+
+
 def arbitageDetection(es:EdgeList):Option[VertexList] = {
 
   val vertexList = es.map(x => List(x.start,x.stop)).flatten.toSet.toList
@@ -96,6 +128,15 @@ def arbitageDetection(es:EdgeList):Option[VertexList] = {
 }
 
 
+// ================================================================
+//
+//                     Test runs and main
+//
+// ==============================================================
+
+
+
+@doc("Test for graph example found here https://www.geeksforgeeks.org/bellman-ford-algorithm-dp-23/")
 @main
 def test1():Unit = {
    val vs:VertexList = List("0","1","2","3","4")
@@ -114,6 +155,7 @@ def test1():Unit = {
 }
 
 
+@doc("Sample profit run for pricenomics example found here  https://priceonomics.com/jobs/puzzle/")
 @main
 def test2():Unit = {
   // val vs2:VertexList = List("usd","eur","jpy","btc")
@@ -131,6 +173,7 @@ def test2():Unit = {
 }
 
 
+@doc("Actual runs with data from pricenomics")
 @main
 def run():Unit = {
    val url = "http://fx.priceonomics.com/v1/rates/"
